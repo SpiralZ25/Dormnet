@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DormNet — แจ้งปัญหาอินเตอร์เน็ต</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#fdf6ec;--amber:#e8a838;--amber-deep:#c4841a;
+  --amber-light:#fef3d0;--rust:#c94f1e;--forest:#2d5a3d;
+  --ink:#1a1208;--ink2:#3d2e14;--muted:#8a7560;
+  --glass:rgba(255,255,255,.6);--shadow:0 8px 32px rgba(26,18,8,.10);
+  --shadow-lg:0 20px 60px rgba(26,18,8,.16);--r:18px;--rs:12px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;}
+body{font-family:'Sarabun',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 70% 60% at 15% 15%,rgba(232,168,56,.18) 0%,transparent 55%),radial-gradient(ellipse 50% 70% at 85% 85%,rgba(201,79,30,.1) 0%,transparent 55%);}
+
+.page{display:none;min-height:100vh;position:relative;z-index:1;flex-direction:column;}
+.page.active{display:flex;animation:fadeUp .35s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem;background:rgba(253,246,236,.9);backdrop-filter:blur(18px);border-bottom:1px solid rgba(232,168,56,.18);position:sticky;top:0;z-index:200;flex-shrink:0;gap:.5rem;}
+.logo{font-family:'DM Serif Display',serif;font-size:1.15rem;color:var(--ink);display:flex;align-items:center;gap:.4rem;letter-spacing:-.02em;flex-shrink:0;}
+.logo-dot{width:7px;height:7px;background:var(--amber);border-radius:50%;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+.nav-r{display:flex;align-items:center;gap:.5rem;min-width:0;}
+.nav-chip{font-size:.72rem;font-family:'DM Mono';color:var(--ink2);background:var(--amber-light);border:1px solid rgba(232,168,56,.3);padding:.18rem .55rem;border-radius:999px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.nav-chip.admin-chip{background:rgba(45,90,61,.12);border-color:rgba(45,90,61,.3);color:var(--forest);}
+.btn-ghost{font-family:'Sarabun';font-size:.8rem;color:var(--muted);background:transparent;border:1px solid transparent;padding:.28rem .6rem;border-radius:8px;cursor:pointer;transition:all .2s;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
+.btn-ghost:hover{border-color:var(--rust);color:var(--rust);}
+
+/* BUTTONS */
+.btn-amber{display:block;width:100%;padding:.88rem 1rem;margin-top:.5rem;background:linear-gradient(135deg,var(--amber),var(--amber-deep));border:none;border-radius:var(--rs);color:#fff;font-family:'DM Serif Display';font-size:1.05rem;cursor:pointer;transition:transform .2s;box-shadow:0 4px 16px rgba(232,168,56,.38);text-align:center;-webkit-tap-highlight-color:transparent;}
+.btn-amber:active{transform:scale(.98);}
+.btn-outline{display:inline-flex;align-items:center;gap:.4rem;padding:.58rem 1rem;background:var(--glass);border:1px solid rgba(255,255,255,.8);border-radius:var(--rs);font-family:'Sarabun';font-size:.84rem;color:var(--ink2);cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.btn-outline:active{transform:scale(.97);}
+.btn-submit{display:inline-flex;align-items:center;gap:.5rem;padding:.82rem 1.8rem;width:100%;background:linear-gradient(135deg,var(--amber),var(--amber-deep));border:none;border-radius:var(--rs);color:#fff;justify-content:center;font-family:'DM Serif Display';font-size:1rem;cursor:pointer;box-shadow:0 4px 16px rgba(232,168,56,.38);transition:transform .2s;-webkit-tap-highlight-color:transparent;}
+.btn-submit:active{transform:scale(.98);}
+.back-pill{display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;color:var(--muted);cursor:pointer;padding:.3rem .8rem;border-radius:999px;background:var(--glass);border:1px solid rgba(255,255,255,.7);margin-bottom:1.1rem;transition:all .2s;font-family:'Sarabun';-webkit-tap-highlight-color:transparent;}
+
+/* FORM */
+.field,.fgroup{margin-bottom:1rem;}
+.field label,.fgroup label{display:block;font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.38rem;}
+.field input,.fgroup input,.fgroup select,.fgroup textarea{width:100%;padding:.75rem .9rem;background:rgba(255,255,255,.85);border:1.5px solid rgba(232,168,56,.25);border-radius:var(--rs);color:var(--ink);font-family:'Sarabun';font-size:1rem;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none;}
+.field input:focus,.fgroup input:focus,.fgroup select:focus,.fgroup textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(232,168,56,.14);}
+.fgroup textarea{min-height:100px;resize:vertical;line-height:1.5;}
+.fgroup .hint{font-size:.72rem;color:var(--muted);margin-top:.28rem;}
+.form-row{display:grid;gap:.8rem;}
+@media(min-width:520px){.form-row{grid-template-columns:1fr 1fr;}}
+
+/* LOGIN */
+#page-login{align-items:center;justify-content:center;padding:1rem;}
+#page-login.active{display:flex;}
+.login-box{width:100%;max-width:860px;background:var(--glass);backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.75);border-radius:22px;overflow:hidden;box-shadow:var(--shadow-lg);}
+.login-grid{display:grid;}
+@media(min-width:600px){.login-grid{grid-template-columns:1fr 1fr;}}
+.login-left{background:linear-gradient(145deg,var(--amber),var(--amber-deep));padding:2.2rem 1.8rem;display:flex;flex-direction:column;justify-content:space-between;gap:1.2rem;position:relative;overflow:hidden;}
+.login-left::after{content:'';position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.1);top:-90px;right:-70px;pointer-events:none;}
+.ll-icon{font-size:2.6rem;}.ll-title{font-family:'DM Serif Display',serif;font-size:clamp(1.5rem,4vw,2.2rem);line-height:1.15;color:#fff;position:relative;z-index:1;}.ll-title em{font-style:italic;}
+.ll-tag{font-size:.82rem;color:rgba(255,255,255,.78);line-height:1.6;}.ll-stats{display:flex;gap:1.1rem;flex-wrap:wrap;}
+.ls-num{font-family:'DM Serif Display';font-size:1.4rem;color:#fff;}.ls-label{font-size:.68rem;color:rgba(255,255,255,.72);}
+.login-right{padding:2.2rem 1.8rem;}.lr-title{font-family:'DM Serif Display';font-size:1.6rem;color:var(--ink);margin-bottom:.2rem;}
+.lr-sub{font-size:.83rem;color:var(--muted);margin-bottom:1.6rem;}
+.demo-tip{text-align:center;margin-top:.85rem;font-size:.74rem;color:var(--muted);}
+.demo-tip code{background:var(--amber-light);padding:.1rem .36rem;border-radius:4px;font-family:'DM Mono';color:var(--amber-deep);}
+.role-switch{display:flex;gap:.5rem;margin-bottom:1.2rem;}
+.role-btn{flex:1;padding:.5rem;border:1.5px solid rgba(232,168,56,.3);border-radius:var(--rs);background:rgba(255,255,255,.7);font-family:'Sarabun';font-size:.84rem;color:var(--muted);cursor:pointer;transition:all .2s;text-align:center;}
+.role-btn.active{background:linear-gradient(135deg,var(--amber),var(--amber-deep));border-color:transparent;color:#fff;font-weight:700;}
+.role-btn.active-admin{background:linear-gradient(135deg,var(--forest),#1e4a2e);border-color:transparent;color:#fff;font-weight:700;}
+
+/* BENTO */
+.bento-wrap{padding:1rem;max-width:960px;margin:0 auto;width:100%;}
+.bento-header{margin-bottom:1.2rem;}
+.bento-title{font-family:'DM Serif Display';font-size:clamp(1.4rem,4vw,1.9rem);color:var(--ink);line-height:1.2;}
+.bento-title em{font-style:italic;color:var(--amber-deep);}
+.bento-sub{color:var(--muted);font-size:.86rem;margin-top:.22rem;}
+.bento-grid{display:grid;grid-template-columns:1fr;gap:.8rem;}
+@media(min-width:440px){.bento-grid{grid-template-columns:1fr 1fr;}.bc-span2{grid-column:span 2;}}
+@media(min-width:760px){.bento-grid{grid-template-columns:repeat(3,1fr);}.bc-span2{grid-column:span 2;}}
+.bento-card{background:var(--glass);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.78);border-radius:var(--r);padding:1.2rem;cursor:pointer;transition:all .25s cubic-bezier(0.22,1,0.36,1);position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;min-height:90px;}
+.bento-card:active{transform:scale(.97);}
+@media(hover:hover){.bento-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);}}
+.card-icon{font-size:1.8rem;margin-bottom:.65rem;}
+.card-badge{display:inline-block;font-size:.64rem;font-family:'DM Mono';padding:.16rem .5rem;border-radius:999px;margin-bottom:.6rem;}
+.badge-hot{background:rgba(201,79,30,.12);color:var(--rust);border:1px solid rgba(201,79,30,.25);}
+.badge-norm{background:rgba(232,168,56,.15);color:var(--amber-deep);border:1px solid rgba(232,168,56,.3);}
+.badge-calm{background:rgba(45,90,61,.1);color:var(--forest);border:1px solid rgba(45,90,61,.2);}
+.card-title{font-family:'DM Serif Display';font-size:1rem;color:var(--ink);margin-bottom:.25rem;}
+.card-desc{font-size:.78rem;color:var(--muted);line-height:1.45;}
+.card-arrow{position:absolute;bottom:.9rem;right:.9rem;width:28px;height:28px;background:var(--amber);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;opacity:0;transition:all .2s;transform:scale(.7);}
+@media(hover:hover){.bento-card:hover .card-arrow{opacity:1;transform:scale(1);}}
+.quick-row{display:flex;gap:.7rem;margin-top:.9rem;flex-wrap:wrap;}
+
+/* FORM PAGE */
+.form-wrap{padding:1rem;max-width:680px;margin:0 auto;width:100%;}
+.form-card{background:var(--glass);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.78);border-radius:var(--r);padding:1.5rem;box-shadow:var(--shadow);}
+.form-title{font-family:'DM Serif Display';font-size:1.55rem;color:var(--ink);margin-bottom:.2rem;}
+.form-sub{font-size:.82rem;color:var(--muted);margin-bottom:1.4rem;}
+.prio-row{display:flex;gap:.5rem;}
+.prio-pill{flex:1;padding:.6rem .3rem;text-align:center;font-size:.78rem;border-radius:var(--rs);cursor:pointer;transition:all .2s;border:1.5px solid rgba(232,168,56,.25);background:rgba(255,255,255,.85);font-family:'Sarabun';-webkit-tap-highlight-color:transparent;}
+.prio-pill.active-low{background:rgba(45,90,61,.1);border-color:var(--forest);color:var(--forest);}
+.prio-pill.active-med{background:rgba(232,168,56,.15);border-color:var(--amber);color:var(--amber-deep);}
+.prio-pill.active-high{background:rgba(201,79,30,.1);border-color:var(--rust);color:var(--rust);}
+.divider{height:1px;background:rgba(232,168,56,.14);margin:1.2rem 0;}
+
+/* SUCCESS */
+#page-success{align-items:center;justify-content:center;}
+#page-success.active{display:flex;flex-direction:column;}
+.success-inner{flex:1;display:flex;align-items:center;justify-content:center;padding:1.2rem;}
+.success-card{background:var(--glass);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.78);border-radius:22px;padding:2.2rem 1.5rem;text-align:center;max-width:420px;width:100%;box-shadow:var(--shadow-lg);}
+.success-anim{font-size:3.8rem;animation:bounceIn .55s cubic-bezier(0.175,.885,.32,1.275);display:block;}
+@keyframes bounceIn{0%{transform:scale(0) rotate(-15deg)}70%{transform:scale(1.12) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+.s-title{font-family:'DM Serif Display';font-size:1.6rem;color:var(--ink);margin-top:.6rem;}
+.s-sub{color:var(--muted);font-size:.84rem;margin-top:.35rem;margin-bottom:1.1rem;}
+.ticket-box{background:var(--amber-light);border:1.5px dashed var(--amber);border-radius:13px;padding:.85rem;margin:1rem 0 1.1rem;}
+.ticket-label{font-size:.68rem;font-family:'DM Mono';color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.ticket-id{font-family:'DM Mono';font-size:1.35rem;color:var(--amber-deep);font-weight:500;margin-top:.22rem;}
+.s-eta{font-size:.78rem;color:var(--muted);}.s-eta strong{color:var(--forest);}
+.s-btns{display:flex;gap:.65rem;margin-top:1.3rem;flex-wrap:wrap;justify-content:center;}
+.s-btn{padding:.6rem 1.1rem;border-radius:var(--rs);cursor:pointer;font-family:'Sarabun';font-size:.82rem;transition:all .2s;border:1.5px solid rgba(232,168,56,.3);background:rgba(255,255,255,.85);color:var(--ink2);-webkit-tap-highlight-color:transparent;}
+.s-btn.primary{background:linear-gradient(135deg,var(--amber),var(--amber-deep));border:none;color:#fff;}
+
+/* STUDENT DASHBOARD */
+.dash-wrap{padding:1rem;max-width:860px;margin:0 auto;width:100%;}
+.dash-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.3rem;flex-wrap:wrap;gap:.7rem;}
+.dash-title{font-family:'DM Serif Display';font-size:clamp(1.4rem,4vw,1.9rem);color:var(--ink);line-height:1.2;}
+.dash-title small{display:block;font-family:'Sarabun';font-size:.8rem;color:var(--muted);margin-top:.18rem;}
+.stat-grid{display:grid;gap:.7rem;margin-bottom:1.3rem;grid-template-columns:repeat(2,1fr);}
+@media(min-width:460px){.stat-grid{grid-template-columns:repeat(4,1fr);}}
+.scard{background:var(--glass);border:1px solid rgba(255,255,255,.78);border-radius:var(--rs);padding:.9rem;text-align:center;}
+.scard-num{font-family:'DM Serif Display';font-size:1.9rem;}.scard-label{font-size:.7rem;color:var(--muted);margin-top:.12rem;font-family:'DM Mono';}
+.c-amber{color:var(--amber-deep);}.c-rust{color:var(--rust);}.c-forest{color:var(--forest);}
+.filter-row{display:flex;gap:.4rem;margin-bottom:1rem;flex-wrap:wrap;}
+.flt-btn{padding:.3rem .8rem;border-radius:999px;font-size:.76rem;border:1px solid rgba(232,168,56,.25);background:rgba(255,255,255,.75);color:var(--muted);cursor:pointer;transition:all .2s;font-family:'Sarabun';-webkit-tap-highlight-color:transparent;}
+.flt-btn.active{background:var(--amber);border-color:var(--amber);color:#fff;}
+.t-list{display:flex;flex-direction:column;gap:.6rem;}
+.t-item{background:var(--glass);border:1px solid rgba(255,255,255,.78);border-radius:var(--rs);padding:.85rem 1rem;display:flex;align-items:center;gap:.8rem;cursor:pointer;transition:all .22s;-webkit-tap-highlight-color:transparent;}
+.t-item:active{transform:scale(.99);}
+.t-item-sel{border-color:var(--amber)!important;background:var(--amber-light)!important;}
+@media(hover:hover){.t-item:hover{border-color:rgba(232,168,56,.4);transform:translateX(4px);}}
+.t-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.dot-open{background:var(--rust);box-shadow:0 0 6px rgba(201,79,30,.5);}
+.dot-prog{background:var(--amber);animation:pulse 1.5s infinite;}.dot-done{background:var(--forest);}
+.t-id{font-family:'DM Mono';font-size:.68rem;color:var(--muted);min-width:76px;display:none;}
+@media(min-width:380px){.t-id{display:block;}}
+.t-info{flex:1;min-width:0;}
+.t-info h4{font-size:.86rem;font-weight:600;margin-bottom:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.t-info p{font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.t-badge{font-size:.66rem;font-family:'DM Mono';padding:.18rem .55rem;border-radius:999px;white-space:nowrap;flex-shrink:0;}
+.tb-open{background:rgba(201,79,30,.1);color:var(--rust);border:1px solid rgba(201,79,30,.25);}
+.tb-prog{background:rgba(232,168,56,.15);color:var(--amber-deep);border:1px solid rgba(232,168,56,.3);}
+.tb-done{background:rgba(45,90,61,.1);color:var(--forest);border:1px solid rgba(45,90,61,.2);}
+.msg-badge{font-size:.64rem;background:rgba(232,168,56,.18);color:var(--amber-deep);border:1px solid rgba(232,168,56,.3);padding:.1rem .42rem;border-radius:999px;font-family:'DM Mono';flex-shrink:0;}
+.new-badge{background:rgba(201,79,30,.12);color:var(--rust);border-color:rgba(201,79,30,.3);}
+
+/* STUDENT TICKET DETAIL (inline below list) */
+.student-detail-card{background:var(--glass);border:1px solid rgba(255,255,255,.78);border-radius:var(--r);overflow:hidden;margin-top:1rem;display:flex;flex-direction:column;}
+.std-detail-head{padding:.9rem 1rem;border-bottom:1px solid rgba(232,168,56,.12);background:rgba(255,255,255,.4);}
+.std-detail-head-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.7rem;flex-wrap:wrap;}
+.std-detail-title{font-family:'DM Serif Display';font-size:1.05rem;color:var(--ink);}
+.std-detail-id{font-family:'DM Mono';font-size:.68rem;color:var(--muted);margin-bottom:.2rem;}
+.std-detail-meta{display:flex;gap:.8rem;margin-top:.4rem;flex-wrap:wrap;}
+.std-detail-meta span{font-size:.74rem;color:var(--muted);}
+.std-detail-meta strong{color:var(--ink2);}
+.std-detail-desc{margin-top:.5rem;font-size:.8rem;color:var(--ink2);background:rgba(232,168,56,.08);padding:.45rem .65rem;border-radius:8px;border-left:3px solid var(--amber);}
+.std-chat-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .9rem;background:linear-gradient(135deg,var(--amber),var(--amber-deep));border:none;border-radius:var(--rs);color:#fff;font-family:'Sarabun';font-size:.8rem;cursor:pointer;transition:transform .15s;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
+.std-chat-btn:active{transform:scale(.96);}
+
+/* ════════════════════════
+   CHAT PAGE (full page)
+════════════════════════ */
+#page-chat.active{display:flex;flex-direction:column;}
+.chat-page-body{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+.chat-page-msgs{flex:1;overflow-y:auto;padding:.9rem 1rem;display:flex;flex-direction:column;gap:.6rem;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;}
+.chat-page-msgs::-webkit-scrollbar{width:3px;}
+.chat-page-msgs::-webkit-scrollbar-thumb{background:rgba(232,168,56,.3);border-radius:2px;}
+.cp-msg{display:flex;flex-direction:column;max-width:80%;}
+.cp-msg.mine{align-self:flex-end;}.cp-msg.theirs{align-self:flex-start;}
+.cp-bubble{padding:.55rem .85rem;border-radius:14px;font-size:.88rem;line-height:1.55;}
+.cp-msg.mine .cp-bubble{background:linear-gradient(135deg,var(--amber),var(--amber-deep));color:#fff;border-bottom-right-radius:3px;}
+.cp-msg.theirs .cp-bubble{background:rgba(255,255,255,.9);color:var(--ink2);border-bottom-left-radius:3px;}
+.cp-time{font-size:.62rem;color:var(--muted);margin-top:.18rem;font-family:'DM Mono';}
+.cp-msg.mine .cp-time{text-align:right;}
+.cp-typing{display:none;align-self:flex-start;padding:.42rem .78rem;background:rgba(255,255,255,.9);border-radius:14px;border-bottom-left-radius:3px;gap:.28rem;align-items:center;}
+.cp-typing.show{display:flex;}
+.dot-t{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:typeDot 1.2s ease-in-out infinite;}
+.dot-t:nth-child(2){animation-delay:.2s;}.dot-t:nth-child(3){animation-delay:.4s;}
+@keyframes typeDot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.chat-page-footer{display:flex;gap:.5rem;padding:.75rem 1rem;border-top:1px solid rgba(232,168,56,.15);background:rgba(255,255,255,.45);flex-shrink:0;padding-bottom:max(.75rem,env(safe-area-inset-bottom));}
+.chat-page-footer input{flex:1;padding:.58rem .9rem;background:rgba(255,255,255,.9);border:1.5px solid rgba(232,168,56,.25);border-radius:12px;color:var(--ink);font-family:'Sarabun';font-size:.95rem;outline:none;transition:border-color .2s;min-width:0;}
+.chat-page-footer input:focus{border-color:var(--amber);}
+.chat-send-btn{width:42px;height:42px;flex-shrink:0;border-radius:12px;background:linear-gradient(135deg,var(--amber),var(--amber-deep));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.95rem;-webkit-tap-highlight-color:transparent;}
+.chat-send-btn:active{transform:scale(.9);}
+/* admin chat list on chat page */
+.chat-ticket-info{padding:.7rem 1rem;background:rgba(255,255,255,.5);border-bottom:1px solid rgba(232,168,56,.12);font-size:.8rem;color:var(--muted);display:flex;gap:.8rem;flex-wrap:wrap;flex-shrink:0;}
+.chat-ticket-info strong{color:var(--ink2);}
+
+/* ADMIN DASHBOARD */
+.admin-wrap{padding:1rem;max-width:1100px;margin:0 auto;width:100%;}
+.admin-grid{display:grid;grid-template-columns:1fr;gap:1rem;}
+@media(min-width:900px){.admin-grid{grid-template-columns:360px 1fr;}}
+.summary-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:.7rem;margin-bottom:1.2rem;}
+@media(min-width:500px){.summary-cards{grid-template-columns:repeat(4,1fr);}}
+.sum-card{background:var(--glass);border:1px solid rgba(255,255,255,.8);border-radius:var(--rs);padding:.9rem;text-align:center;}
+.sum-num{font-family:'DM Serif Display';font-size:2rem;}.sum-label{font-size:.68rem;color:var(--muted);margin-top:.1rem;font-family:'DM Mono';}
+.admin-ticket-list{display:flex;flex-direction:column;gap:.55rem;}
+.admin-ticket{background:var(--glass);border:1px solid rgba(255,255,255,.8);border-radius:var(--rs);padding:.85rem 1rem;cursor:pointer;transition:all .22s;-webkit-tap-highlight-color:transparent;}
+.admin-ticket:active{transform:scale(.99);}
+.admin-ticket.selected{border-color:var(--amber);background:var(--amber-light);}
+@media(hover:hover){.admin-ticket:hover{border-color:rgba(232,168,56,.5);}}
+.at-head{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;}
+.at-id{font-family:'DM Mono';font-size:.68rem;color:var(--muted);min-width:85px;}
+.at-type{font-size:.86rem;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.at-meta{display:flex;gap:.5rem;margin-top:.35rem;flex-wrap:wrap;align-items:center;}
+.at-room{font-size:.74rem;color:var(--muted);}
+.at-date{font-size:.68rem;color:var(--muted);font-family:'DM Mono';}
+.at-reply-count{font-size:.68rem;background:rgba(232,168,56,.15);color:var(--amber-deep);border:1px solid rgba(232,168,56,.3);padding:.1rem .45rem;border-radius:999px;font-family:'DM Mono';}
+.ticket-detail{background:var(--glass);border:1px solid rgba(255,255,255,.8);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;min-height:320px;}
+.td-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:.5rem;padding:2rem;}
+.td-empty-icon{font-size:2.5rem;opacity:.4;}.td-empty-text{font-size:.9rem;}
+.td-header{padding:1rem 1.1rem;border-bottom:1px solid rgba(232,168,56,.12);background:rgba(255,255,255,.45);}
+.td-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.8rem;flex-wrap:wrap;}
+.td-title{font-family:'DM Serif Display';font-size:1.15rem;color:var(--ink);}
+.td-id{font-family:'DM Mono';font-size:.7rem;color:var(--muted);margin-bottom:.2rem;}
+.td-info-row{display:flex;gap:1rem;margin-top:.5rem;flex-wrap:wrap;}
+.td-info-item{font-size:.78rem;color:var(--muted);}.td-info-item strong{color:var(--ink2);}
+.td-detail-txt{margin-top:.6rem;font-size:.8rem;color:var(--ink2);background:rgba(232,168,56,.08);padding:.45rem .65rem;border-radius:8px;border-left:3px solid var(--amber);}
+
+/* Admin action buttons — only กำลังไปแก้ + เสร็จสิ้น */
+.admin-action-btns{display:flex;gap:.6rem;margin-top:.8rem;flex-wrap:wrap;}
+.action-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:var(--rs);font-family:'Sarabun';font-size:.84rem;cursor:pointer;transition:all .18s;border:1.5px solid;-webkit-tap-highlight-color:transparent;}
+.action-btn:active{transform:scale(.96);}
+.action-btn.fixing{background:rgba(232,168,56,.12);color:var(--amber-deep);border-color:rgba(232,168,56,.4);}
+.action-btn.fixing.active-action{background:linear-gradient(135deg,var(--amber),var(--amber-deep));color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(232,168,56,.35);}
+.action-btn.done-btn{background:rgba(45,90,61,.08);color:var(--forest);border-color:rgba(45,90,61,.3);}
+.action-btn.done-btn.active-action{background:linear-gradient(135deg,var(--forest),#1e4a2e);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(45,90,61,.3);}
+.admin-chat-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:var(--rs);font-family:'Sarabun';font-size:.84rem;cursor:pointer;transition:all .18s;background:rgba(45,90,61,.08);color:var(--forest);border:1.5px solid rgba(45,90,61,.3);-webkit-tap-highlight-color:transparent;margin-top:.5rem;}
+.admin-chat-btn:active{transform:scale(.96);}
+
+.admin-filter-row{display:flex;gap:.4rem;margin-bottom:.85rem;flex-wrap:wrap;}
+.aflt{padding:.28rem .75rem;border-radius:999px;font-size:.74rem;border:1px solid rgba(232,168,56,.25);background:rgba(255,255,255,.75);color:var(--muted);cursor:pointer;font-family:'Sarabun';transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.aflt.active{background:var(--forest);border-color:var(--forest);color:#fff;}
+.section-title{font-family:'DM Serif Display';font-size:1.1rem;color:var(--ink);margin-bottom:.7rem;}
+</style>
+</head>
+<body>
+
+<!-- ════ LOGIN ════ -->
+<div class="page active" id="page-login">
+  <div class="login-box">
+    <div class="login-grid">
+      <div class="login-left">
+        <div>
+          <div class="ll-icon">📶</div>
+          <div class="ll-title">มีปัญหา<br><em>อินเตอร์เน็ต?</em><br>บอกเราได้เลย</div>
+          <div class="ll-tag" style="margin-top:.7rem;">ระบบแจ้งซ่อมออนไลน์ 24 ชั่วโมง<br>ทีมเทคนิคพร้อมช่วยเหลือเสมอ</div>
+        </div>
+        <div class="ll-stats">
+          <div class="ls"><div class="ls-num">&lt;4h</div><div class="ls-label">ตอบสนอง</div></div>
+          <div class="ls"><div class="ls-num">98%</div><div class="ls-label">แก้ไขสำเร็จ</div></div>
+          <div class="ls"><div class="ls-num">24/7</div><div class="ls-label">พร้อมรับแจ้ง</div></div>
+        </div>
+      </div>
+      <div class="login-right">
+        <div class="lr-title">เข้าสู่ระบบ</div>
+        <div class="lr-sub">เลือกประเภทบัญชีของคุณ</div>
+        <div class="role-switch">
+          <button class="role-btn active" id="role-student" onclick="switchRole('student')">🎓 นักศึกษา</button>
+          <button class="role-btn" id="role-admin" onclick="switchRole('admin')">🔧 แอดมิน</button>
+        </div>
+        <div id="login-student-fields">
+          <div class="field"><label>รหัสนักศึกษา</label>
+            <input type="text" id="inp-user" value="6812345678" placeholder="68XXXXXXXX" autocomplete="username" maxlength="10" inputmode="numeric">
+          </div>
+          <div class="field"><label>รหัสผ่าน (= รหัสนักศึกษา)</label>
+            <input type="password" id="inp-pass" value="6812345678" placeholder="••••••••••" autocomplete="current-password">
+          </div>
+          <div class="demo-tip">ทดสอบ: <code>6812345678</code> / รหัสผ่าน = รหัสนักศึกษา</div>
+        </div>
+        <div id="login-admin-fields" style="display:none">
+          <div class="field"><label>ชื่อผู้ใช้แอดมิน</label>
+            <input type="text" id="inp-admin-user" value="admin" placeholder="admin" autocomplete="username">
+          </div>
+          <div class="field"><label>รหัสผ่าน</label>
+            <input type="password" id="inp-admin-pass" value="admin1234" placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <div class="demo-tip">ทดสอบ: <code>admin</code> / <code>admin1234</code></div>
+        </div>
+        <button class="btn-amber" onclick="doLogin()">เข้าสู่ระบบ →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SELECT ════ -->
+<div class="page" id="page-select">
+  <nav>
+    <div class="logo"><span class="logo-dot"></span> DormNet</div>
+    <div class="nav-r"><span class="nav-chip" id="chip1">นักศึกษา</span><button class="btn-ghost" onclick="doLogout()">ออกจากระบบ</button></div>
+  </nav>
+  <div class="bento-wrap">
+    <div class="bento-header">
+      <div class="bento-title">สวัสดี! มี<em>ปัญหา</em><br>อะไรให้ช่วยไหม?</div>
+      <div class="bento-sub">เลือกประเภทปัญหาที่คุณพบ</div>
+    </div>
+    <div class="bento-grid">
+      <div class="bento-card bc-span2" onclick="goReport('no-internet')" tabindex="0"><div class="card-badge badge-hot">⚡ เร่งด่วน</div><div class="card-icon">🚫</div><div class="card-title">ไม่มีสัญญาณอินเตอร์เน็ตเลย</div><div class="card-desc">เชื่อมต่อไม่ได้ทั้ง Wi-Fi และสาย LAN</div><div class="card-arrow">→</div></div>
+      <div class="bento-card" onclick="goReport('slow-speed')" tabindex="0"><div class="card-badge badge-norm">ทั่วไป</div><div class="card-icon">🐢</div><div class="card-title">อินเตอร์เน็ตช้า</div><div class="card-desc">โหลดนาน บัฟเฟอร์</div><div class="card-arrow">→</div></div>
+      <div class="bento-card" onclick="goReport('wifi-drop')" tabindex="0"><div class="card-badge badge-norm">ทั่วไป</div><div class="card-icon">📡</div><div class="card-title">Wi-Fi หลุดบ่อย</div><div class="card-desc">สัญญาณตัดเป็นช่วง</div><div class="card-arrow">→</div></div>
+      <div class="bento-card" onclick="goReport('cannot-connect')" tabindex="0"><div class="card-badge badge-calm">เฉพาะบาง</div><div class="card-icon">🔒</div><div class="card-title">บางเว็บใช้ไม่ได้</div><div class="card-desc">บางเว็บ/แอปไม่ทำงาน</div><div class="card-arrow">→</div></div>
+      <div class="bento-card" onclick="goReport('lan-cable')" tabindex="0"><div class="card-badge badge-calm">ฮาร์ดแวร์</div><div class="card-icon">🔌</div><div class="card-title">สาย LAN / พอร์ต</div><div class="card-desc">พอร์ตเสีย สายขาด</div><div class="card-arrow">→</div></div>
+      <div class="bento-card" onclick="goReport('other')" tabindex="0"><div class="card-icon">💬</div><div class="card-title">ปัญหาอื่นๆ</div><div class="card-desc">ไม่อยู่ในหมวดข้างต้น</div><div class="card-arrow">→</div></div>
+    </div>
+    <div class="quick-row">
+      <button class="btn-outline" onclick="goPage('page-dashboard')">📋 ดูรายการแจ้งซ่อมของฉัน</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ REPORT ════ -->
+<div class="page" id="page-report">
+  <nav><div class="logo"><span class="logo-dot"></span> DormNet</div><div class="nav-r"><span class="nav-chip" id="chip2">นักศึกษา</span><button class="btn-ghost" onclick="doLogout()">ออกจากระบบ</button></div></nav>
+  <div class="form-wrap">
+    <button class="back-pill" onclick="goPage('page-select')">← กลับ</button>
+    <div class="form-card">
+      <div class="form-title">แจ้งปัญหา</div>
+      <div class="form-sub" id="fsub">กรอกข้อมูลเพื่อให้ทีมเทคนิคช่วยเหลือ</div>
+      <div class="form-row">
+        <div class="fgroup"><label>อาคาร / หอพัก</label>
+          <select id="f-building"><option value="">-- เลือกอาคาร --</option><option>หอ A (ชาย)</option><option>หอ B (หญิง)</option><option>หอ C (รวม)</option><option>หอ D (บัณฑิต)</option><option>อาคารพักนักศึกษา 1</option><option>อาคารพักนักศึกษา 2</option></select>
+        </div>
+        <div class="fgroup"><label>เลขห้อง</label><input type="text" id="f-room" placeholder="301, 412B …" inputmode="text"></div>
+      </div>
+      <div class="fgroup"><label>ประเภทปัญหา</label>
+        <select id="f-type"><option value="no-internet">ไม่มีสัญญาณอินเตอร์เน็ต</option><option value="slow-speed">อินเตอร์เน็ตช้ามาก</option><option value="wifi-drop">Wi-Fi หลุดบ่อย</option><option value="cannot-connect">เชื่อมต่อบางเว็บไม่ได้</option><option value="lan-cable">ปัญหาสาย LAN / พอร์ต</option><option value="other">ปัญหาอื่นๆ</option></select>
+      </div>
+      <div class="fgroup"><label>อุปกรณ์</label>
+        <select id="f-device"><option value="">-- เลือกอุปกรณ์ --</option><option>โน้ตบุ๊ก (Windows)</option><option>โน้ตบุ๊ก (Mac)</option><option>สมาร์ทโฟน (Android)</option><option>สมาร์ทโฟน (iPhone)</option><option>แท็บเล็ต</option><option>หลายอุปกรณ์</option></select>
+      </div>
+      <div class="fgroup"><label>ระดับความเร่งด่วน</label>
+        <div class="prio-row">
+          <div class="prio-pill" id="pp-low" onclick="setPrio('low')">🟢 ไม่เร่ง</div>
+          <div class="prio-pill active-med" id="pp-med" onclick="setPrio('med')">🟡 ปานกลาง</div>
+          <div class="prio-pill" id="pp-high" onclick="setPrio('high')">🔴 เร่งด่วน</div>
+        </div>
+      </div>
+      <div class="fgroup"><label>รายละเอียดปัญหา</label><textarea id="f-detail" placeholder="เกิดขึ้นตั้งแต่เมื่อไหร่? บ่อยแค่ไหน? ลองแก้อะไรแล้วบ้าง?"></textarea></div>
+      <div class="divider"></div>
+      <div class="fgroup"><label>เบอร์โทรติดต่อ <span style="font-weight:300;text-transform:none;">(ไม่บังคับ)</span></label><input type="tel" id="f-phone" placeholder="0XX-XXX-XXXX" inputmode="tel"></div>
+      <button class="btn-submit" onclick="doSubmit()">ส่งรายงาน →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SUCCESS ════ -->
+<div class="page" id="page-success">
+  <nav><div class="logo"><span class="logo-dot"></span> DormNet</div><div class="nav-r"><button class="btn-ghost" onclick="doLogout()">ออกจากระบบ</button></div></nav>
+  <div class="success-inner">
+    <div class="success-card">
+      <span class="success-anim">🎉</span>
+      <div class="s-title">ส่งรายงานสำเร็จ!</div>
+      <div class="s-sub">ทีมเทคนิคได้รับแจ้งแล้ว</div>
+      <div class="ticket-box"><div class="ticket-label">หมายเลขใบแจ้งซ่อม</div><div class="ticket-id" id="s-ticket">#TK-2025-0001</div></div>
+      <div class="s-eta">ระยะเวลา: <strong>4–24 ชั่วโมง</strong></div>
+      <div class="s-btns">
+        <button class="s-btn primary" onclick="goPage('page-dashboard')">📋 ดูสถานะ</button>
+        <button class="s-btn" onclick="goPage('page-select')">➕ แจ้งปัญหาใหม่</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ STUDENT DASHBOARD ════ -->
+<div class="page" id="page-dashboard">
+  <nav><div class="logo"><span class="logo-dot"></span> DormNet</div><div class="nav-r"><span class="nav-chip" id="chip3">นักศึกษา</span><button class="btn-ghost" onclick="doLogout()">ออกจากระบบ</button></div></nav>
+  <div class="dash-wrap">
+    <button class="back-pill" onclick="goPage('page-select')">← กลับ</button>
+    <div class="dash-header">
+      <div class="dash-title">รายการแจ้งซ่อม<small>ติดตามสถานะของคุณ</small></div>
+      <button class="btn-outline" onclick="goPage('page-select')">+ แจ้งใหม่</button>
+    </div>
+    <div class="stat-grid">
+      <div class="scard"><div class="scard-num c-amber" id="d-total">0</div><div class="scard-label">ทั้งหมด</div></div>
+      <div class="scard"><div class="scard-num c-rust" id="d-open">0</div><div class="scard-label">รอดำเนินการ</div></div>
+      <div class="scard"><div class="scard-num c-amber" id="d-prog">0</div><div class="scard-label">กำลังดำเนินการ</div></div>
+      <div class="scard"><div class="scard-num c-forest" id="d-done">0</div><div class="scard-label">แก้ไขแล้ว</div></div>
+    </div>
+    <div class="filter-row">
+      <button class="flt-btn active" onclick="filterT('all',this)">ทั้งหมด</button>
+      <button class="flt-btn" onclick="filterT('open',this)">รอดำเนินการ</button>
+      <button class="flt-btn" onclick="filterT('progress',this)">กำลังดำเนินการ</button>
+      <button class="flt-btn" onclick="filterT('done',this)">แก้ไขแล้ว</button>
+    </div>
+    <div class="t-list" id="t-list"></div>
+    <div id="student-detail"></div>
+  </div>
+</div>
+
+<!-- ════ CHAT PAGE (full page) ════ -->
+<div class="page" id="page-chat">
+  <nav>
+    <div style="display:flex;align-items:center;gap:.5rem;min-width:0;">
+      <button class="back-pill" style="margin:0;" id="chat-back-btn" onclick="goBack()">← กลับ</button>
+      <div style="min-width:0;">
+        <div style="font-family:'DM Serif Display';font-size:1rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;" id="chat-page-title">แชท</div>
+        <div style="font-size:.7rem;color:var(--muted);font-family:'DM Mono';" id="chat-page-sub"></div>
+      </div>
+    </div>
+    <div class="nav-r"><span class="nav-chip" id="chip-chat" style="max-width:90px;"></span><button class="btn-ghost" onclick="doLogout()">ออกจากระบบ</button></div>
+  </nav>
+  <div class="chat-ticket-info" id="chat-ticket-info"></div>
+  <div class="chat-page-body">
+    <div class="chat-page-msgs" id="chat-page-msgs">
+      <div class="cp-typing" id="cp-typing"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>
+    </div>
+    <div class="chat-page-footer">
+      <input type="text" id="cp-input" placeholder="พิมพ์ข้อความ…" onkeydown="if(event.key==='Enter')cpSend()" inputmode="text" autocomplete="off">
+      <button class="chat-send-btn" onclick="cpSend()">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ ADMIN DASHBOARD ════ -->
+<div class="page" id="page-admin">
+  <nav>
+    <div class="logo"><span class="logo-dot"></span> DormNet <span style="font-size:.72rem;color:var(--forest);font-family:'DM Mono';background:rgba(45,90,61,.1);padding:.1rem .4rem;border-radius:4px;margin-left:.3rem;">ADMIN</span></div>
+    <div class="nav-r"><span class="nav-chip admin-chip" id="chip-admin">admin</span><button class="btn-ghost" onclick="doLogout()">ออกจากระบบ</button></div>
+  </nav>
+  <div class="admin-wrap">
+    <div class="summary-cards" id="admin-summary"></div>
+    <div class="admin-grid">
+      <div>
+        <div class="section-title">รายการทั้งหมด</div>
+        <div class="admin-filter-row">
+          <button class="aflt active" onclick="adminFilter('all',this)">ทั้งหมด</button>
+          <button class="aflt" onclick="adminFilter('open',this)">รอดำเนินการ</button>
+          <button class="aflt" onclick="adminFilter('progress',this)">กำลังดำเนินการ</button>
+          <button class="aflt" onclick="adminFilter('done',this)">เสร็จสิ้น</button>
+        </div>
+        <div class="admin-ticket-list" id="admin-ticket-list"></div>
+      </div>
+      <div>
+        <div class="section-title">รายละเอียด</div>
+        <div class="ticket-detail" id="ticket-detail">
+          <div class="td-empty"><div class="td-empty-icon">📋</div><div class="td-empty-text">เลือก ticket เพื่อดูรายละเอียด</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════ STATE ════ */
+let prio='med', counter=72, autoIdx=0;
+let currentRole='student', currentUser='', selectedTicketId=null, selectedStudentTicketId=null;
+let adminFilterVal='all', studentFilterVal='all';
+let chatTicketId=null, chatFromPage='page-dashboard'; // which ticket is open in chat page
+
+let tickets=[
+  {id:'TK-2025-0045',type:'Wi-Fi หลุดบ่อย',room:'หอ A ห้อง 301',date:'14 ม.ค. 68',status:'done',student:'6812000001',device:'โน้ตบุ๊ก (Windows)',detail:'หลุดทุก 30 นาที',msgs:[{role:'student',text:'หลุดบ่อยมากเลยครับ',time:'09:12'},{role:'admin',text:'รับทราบครับ ทีมตรวจสอบแล้วและแก้ไขเรียบร้อย',time:'09:45'}]},
+  {id:'TK-2025-0063',type:'อินเตอร์เน็ตช้ามาก',room:'หอ A ห้อง 301',date:'02 ก.พ. 68',status:'progress',student:'6812000002',device:'สมาร์ทโฟน (Android)',detail:'โหลดวิดีโอไม่ได้เลย',msgs:[{role:'student',text:'ช้ามากครับ 0.1 Mbps',time:'14:30'},{role:'admin',text:'รับทราบครับ กำลังตรวจสอบสายเมนอยู่',time:'14:55'}]},
+  {id:'TK-2025-0071',type:'ไม่มีสัญญาณอินเตอร์เน็ต',room:'หอ B ห้อง 214',date:'17 ก.พ. 68',status:'open',student:'6812000003',device:'หลายอุปกรณ์',detail:'ตั้งแต่เมื่อคืน',msgs:[]},
+  {id:'TK-2025-0078',type:'บางเว็บใช้ไม่ได้',room:'หอ C ห้อง 108',date:'20 ก.พ. 68',status:'open',student:'6812000004',device:'โน้ตบุ๊ก (Mac)',detail:'YouTube ใช้ไม่ได้',msgs:[]},
+];
+
+const typeMap={'no-internet':'ไม่มีสัญญาณอินเตอร์เน็ต','slow-speed':'อินเตอร์เน็ตช้ามาก','wifi-drop':'Wi-Fi หลุดบ่อย','cannot-connect':'เชื่อมต่อบางเว็บไม่ได้','lan-cable':'ปัญหาสาย LAN / พอร์ต','other':'ปัญหาอื่นๆ'};
+const months=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+/* ════ UTILS ════ */
+function nowTime(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}
+function goPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}
+function goBack(){goPage(chatFromPage);}
+
+/* ════ ROLE & AUTH ════ */
+function switchRole(role){
+  currentRole=role;
+  document.getElementById('role-student').className='role-btn'+(role==='student'?' active':'');
+  document.getElementById('role-admin').className='role-btn'+(role==='admin'?' active-admin':'');
+  document.getElementById('login-student-fields').style.display=role==='student'?'':'none';
+  document.getElementById('login-admin-fields').style.display=role==='admin'?'':'none';
+}
+function doLogin(){
+  if(currentRole==='admin'){
+    const u=document.getElementById('inp-admin-user').value.trim();
+    const p=document.getElementById('inp-admin-pass').value.trim();
+    if(!u||!p){alert('กรุณากรอกข้อมูลให้ครบ');return;}
+    if(u!=='admin'||p!=='admin1234'){alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');return;}
+    currentUser='admin'; currentRole='admin';
+    document.getElementById('chip-admin').textContent='admin';
+    renderAdminDashboard(); goPage('page-admin');
+  } else {
+    const u=document.getElementById('inp-user').value.trim();
+    const p=document.getElementById('inp-pass').value.trim();
+    if(!u||!p){alert('กรุณากรอกข้อมูลให้ครบ');return;}
+    if(!u.startsWith('68')){alert('รหัสนักศึกษาต้องขึ้นต้นด้วย 68');return;}
+    if(u.length>10){alert('รหัสนักศึกษาต้องไม่เกิน 10 ตัวอักษร');return;}
+    if(p!==u){alert('รหัสผ่านไม่ถูกต้อง\nรหัสผ่านคือรหัสนักศึกษาของคุณ');return;}
+    currentUser=u; currentRole='student';
+    ['chip1','chip2','chip3'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=u;});
+    updateStats(); renderTickets('all'); goPage('page-select');
+  }
+}
+function doLogout(){
+  currentUser=''; selectedTicketId=null; selectedStudentTicketId=null; chatTicketId=null;
+  goPage('page-login');
+}
+
+/* ════ REPORT ════ */
+function goReport(type){document.getElementById('f-type').value=type;document.getElementById('fsub').textContent='แจ้งปัญหา: '+(typeMap[type]||'');goPage('page-report');}
+function setPrio(level){prio=level;['low','med','high'].forEach(l=>{document.getElementById('pp-'+l).className='prio-pill'+(l===level?' active-'+l:'');});}
+function doSubmit(){
+  const b=document.getElementById('f-building').value;
+  const r=document.getElementById('f-room').value.trim();
+  const detail=document.getElementById('f-detail').value.trim();
+  if(!b){alert('กรุณาเลือกอาคาร');return;}
+  if(!r){alert('กรุณากรอกเลขห้อง');return;}
+  counter++;
+  const id='TK-2025-0'+counter;
+  document.getElementById('s-ticket').textContent='#'+id;
+  const now=new Date();
+  const d=now.getDate()+' '+months[now.getMonth()]+' '+(now.getFullYear()-1957+2500);
+  tickets.unshift({id,type:typeMap[document.getElementById('f-type').value]||'ปัญหาอื่นๆ',room:b+' ห้อง '+r,date:d,status:'open',student:currentUser,device:document.getElementById('f-device').value||'ไม่ระบุ',detail:detail||'ไม่มีรายละเอียดเพิ่มเติม',msgs:[]});
+  updateStats(); renderTickets(studentFilterVal); goPage('page-success');
+}
+
+/* ════ STUDENT DASHBOARD ════ */
+function myTickets(){return tickets.filter(t=>t.student===currentUser);}
+function updateStats(){
+  const m=myTickets();
+  document.getElementById('d-total').textContent=m.length;
+  document.getElementById('d-open').textContent=m.filter(t=>t.status==='open').length;
+  document.getElementById('d-prog').textContent=m.filter(t=>t.status==='progress').length;
+  document.getElementById('d-done').textContent=m.filter(t=>t.status==='done').length;
+}
+function filterT(f,btn){
+  studentFilterVal=f;
+  document.querySelectorAll('.flt-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderTickets(f);
+}
+function renderTickets(filter){
+  const sl={open:'รอดำเนินการ',progress:'กำลังดำเนินการ',done:'แก้ไขแล้ว'};
+  const sc={open:'tb-open',progress:'tb-prog',done:'tb-done'};
+  const dc={open:'dot-open',progress:'dot-prog',done:'dot-done'};
+  const mine=myTickets();
+  const shown=filter==='all'?mine:mine.filter(t=>t.status===filter);
+  const hasAdmin=t=>t.msgs.some(m=>m.role==='admin');
+  document.getElementById('t-list').innerHTML=shown.length
+    ?shown.map(t=>`
+      <div class="t-item${selectedStudentTicketId===t.id?' t-item-sel':''}" onclick="selectStudentTicket('${t.id}')">
+        <div class="t-dot ${dc[t.status]}"></div>
+        <div class="t-id">#${t.id}</div>
+        <div class="t-info"><h4>${t.type}</h4><p>${t.room} · ${t.date}</p></div>
+        <span class="t-badge ${sc[t.status]}">${sl[t.status]}</span>
+        ${t.msgs.length?`<span class="msg-badge${hasAdmin(t)?' new-badge':''}">💬${t.msgs.length}</span>`:''}
+      </div>`).join('')
+    :'<div style="text-align:center;color:var(--muted);padding:2rem;font-size:.88rem;">ยังไม่มีรายการแจ้งซ่อม</div>';
+  if(selectedStudentTicketId) renderStudentDetail(selectedStudentTicketId);
+}
+function selectStudentTicket(id){selectedStudentTicketId=id;renderTickets(studentFilterVal);}
+function renderStudentDetail(id){
+  const t=tickets.find(x=>x.id===id);if(!t){document.getElementById('student-detail').innerHTML='';return;}
+  const sl={open:'รอดำเนินการ',progress:'กำลังดำเนินการ',done:'แก้ไขแล้ว'};
+  const sc={open:'tb-open',progress:'tb-prog',done:'tb-done'};
+  document.getElementById('student-detail').innerHTML=`
+    <div class="student-detail-card">
+      <div class="std-detail-head">
+        <div class="std-detail-head-top">
+          <div><div class="std-detail-id">#${t.id}</div><div class="std-detail-title">${t.type}</div></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.4rem;">
+            <span class="t-badge ${sc[t.status]}">${sl[t.status]}</span>
+            <button class="std-chat-btn" onclick="openChatPage('${t.id}','page-dashboard')">💬 แชทกับแอดมิน ${t.msgs.length?'('+t.msgs.length+')':''}</button>
+          </div>
+        </div>
+        <div class="std-detail-meta">
+          <span>📍 <strong>${t.room}</strong></span>
+          <span>📅 <strong>${t.date}</strong></span>
+          <span>📱 <strong>${t.device}</strong></span>
+        </div>
+        ${t.detail?`<div class="std-detail-desc">${t.detail}</div>`:''}
+      </div>
+      ${t.msgs.length?`<div style="padding:.7rem 1rem;font-size:.78rem;color:var(--muted);border-top:1px solid rgba(232,168,56,.1);">ข้อความล่าสุด: <strong style="color:var(--ink2);">${t.msgs[t.msgs.length-1].text}</strong></div>`:''}
+    </div>`;
+}
+
+/* ════ CHAT PAGE ════ */
+function openChatPage(tid, fromPage){
+  chatTicketId=tid;
+  chatFromPage=fromPage||'page-dashboard';
+  const t=tickets.find(x=>x.id===tid);if(!t)return;
+  const isAdmin=(currentRole==='admin');
+  document.getElementById('chat-page-title').textContent=isAdmin?t.student+' — '+t.type:t.type;
+  document.getElementById('chat-page-sub').textContent='#'+t.id;
+  document.getElementById('chip-chat').textContent=isAdmin?'admin':currentUser;
+  // ticket info bar
+  document.getElementById('chat-ticket-info').innerHTML=`
+    <span>📍 <strong>${t.room}</strong></span>
+    <span>📅 <strong>${t.date}</strong></span>
+    <span>📱 <strong>${t.device}</strong></span>`;
+  renderChatPage(tid);
+  goPage('page-chat');
+  setTimeout(()=>{const el=document.getElementById('chat-page-msgs');if(el)el.scrollTop=el.scrollHeight;},100);
+}
+function renderChatPage(tid){
+  const t=tickets.find(x=>x.id===tid);if(!t)return;
+  const isAdmin=(currentRole==='admin');
+  const msgs=document.getElementById('chat-page-msgs');
+  const typing=document.getElementById('cp-typing');
+  // clear all except typing indicator
+  while(msgs.firstChild&&msgs.firstChild!==typing) msgs.removeChild(msgs.firstChild);
+  // prepend messages before typing
+  t.msgs.forEach(m=>{
+    const isMine=(isAdmin&&m.role==='admin')||(!isAdmin&&m.role==='student');
+    const div=document.createElement('div');
+    div.className='cp-msg '+(isMine?'mine':'theirs');
+    const sender=m.role==='admin'?'แอดมิน':'นักศึกษา';
+    div.innerHTML=`<div class="cp-bubble">${m.text}</div><div class="cp-time">${sender} · ${m.time}</div>`;
+    msgs.insertBefore(div,typing);
+  });
+  if(t.msgs.length===0){
+    const ph=document.createElement('div');
+    ph.style.cssText='text-align:center;color:var(--muted);padding:2rem;font-size:.84rem;';
+    ph.textContent='ยังไม่มีข้อความ — เริ่มแชทได้เลยครับ';
+    msgs.insertBefore(ph,typing);
+  }
+  msgs.scrollTop=msgs.scrollHeight;
+}
+function cpSend(){
+  const inp=document.getElementById('cp-input');
+  const txt=inp.value.trim();if(!txt)return;
+  inp.value='';
+  const t=tickets.find(x=>x.id===chatTicketId);if(!t)return;
+  const role=currentRole==='admin'?'admin':'student';
+  t.msgs.push({role,text:txt,time:nowTime()});
+  renderChatPage(chatTicketId);
+  // if student sends — show admin typing and auto-reply
+  if(currentRole==='student'){
+    const typing=document.getElementById('cp-typing');
+    typing.classList.add('show');
+    document.getElementById('chat-page-msgs').scrollTop=99999;
+    const autoReplies=['รับทราบครับ กำลังตรวจสอบให้ 🔍','ทีมจะรีบดูให้ภายใน 30 นาทีครับ','ขอบคุณที่แจ้ง จะประสานทีมช่างทันทีเลยครับ','รับเรื่องแล้วครับ ถ้ายังมีปัญหาแจ้งได้เลย'];
+    setTimeout(()=>{
+      typing.classList.remove('show');
+      t.msgs.push({role:'admin',text:autoReplies[autoIdx%autoReplies.length],time:nowTime()});
+      autoIdx++;
+      renderChatPage(chatTicketId);
+      renderTickets(studentFilterVal);
+      if(selectedStudentTicketId===chatTicketId) renderStudentDetail(chatTicketId);
+    },900+Math.random()*600);
+  }
+  // refresh admin list badge
+  if(currentRole==='admin'){renderAdminList(adminFilterVal);}
+}
+
+/* ════ ADMIN DASHBOARD ════ */
+function renderAdminDashboard(){
+  const total=tickets.length,open=tickets.filter(t=>t.status==='open').length;
+  const prog=tickets.filter(t=>t.status==='progress').length,done=tickets.filter(t=>t.status==='done').length;
+  document.getElementById('admin-summary').innerHTML=`
+    <div class="sum-card"><div class="sum-num c-amber">${total}</div><div class="sum-label">ทั้งหมด</div></div>
+    <div class="sum-card"><div class="sum-num c-rust">${open}</div><div class="sum-label">รอดำเนินการ</div></div>
+    <div class="sum-card"><div class="sum-num c-amber">${prog}</div><div class="sum-label">กำลังดำเนินการ</div></div>
+    <div class="sum-card"><div class="sum-num c-forest">${done}</div><div class="sum-label">เสร็จสิ้น</div></div>`;
+  renderAdminList(adminFilterVal);
+  if(selectedTicketId) renderTicketDetail(selectedTicketId);
+}
+function adminFilter(f,btn){
+  adminFilterVal=f;
+  document.querySelectorAll('.aflt').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderAdminList(f);
+}
+function renderAdminList(filter){
+  const shown=filter==='all'?tickets:(filter==='done'?tickets.filter(t=>t.status==='done'):tickets.filter(t=>t.status===filter));
+  const sc={open:'tb-open',progress:'tb-prog',done:'tb-done'};
+  const sl={open:'รอดำเนินการ',progress:'กำลังดำเนินการ',done:'เสร็จสิ้น'};
+  document.getElementById('admin-ticket-list').innerHTML=shown.length
+    ?shown.map(t=>`
+      <div class="admin-ticket${selectedTicketId===t.id?' selected':''}" onclick="selectTicket('${t.id}')">
+        <div class="at-head">
+          <span class="at-id">#${t.id}</span>
+          <span class="at-type">${t.type}</span>
+          <span class="t-badge ${sc[t.status]}">${sl[t.status]}</span>
+        </div>
+        <div class="at-meta">
+          <span class="at-room">📍 ${t.room}</span>
+          <span class="at-date">${t.date}</span>
+          <span style="font-size:.7rem;color:var(--muted);">👤 ${t.student}</span>
+          ${t.msgs.length?`<span class="at-reply-count">💬 ${t.msgs.length}</span>`:''}
+        </div>
+      </div>`).join('')
+    :'<div style="text-align:center;color:var(--muted);padding:1.5rem;font-size:.85rem;">ไม่มีรายการ</div>';
+}
+function selectTicket(id){selectedTicketId=id;renderAdminList(adminFilterVal);renderTicketDetail(id);}
+function renderTicketDetail(id){
+  const t=tickets.find(x=>x.id===id);if(!t)return;
+  const sl={open:'รอดำเนินการ',progress:'กำลังดำเนินการ',done:'เสร็จสิ้น'};
+  const sc={open:'tb-open',progress:'tb-prog',done:'tb-done'};
+  document.getElementById('ticket-detail').innerHTML=`
+    <div class="td-header">
+      <div class="td-header-top">
+        <div><div class="td-id">#${t.id}</div><div class="td-title">${t.type}</div></div>
+        <span class="t-badge ${sc[t.status]}">${sl[t.status]}</span>
+      </div>
+      <div class="td-info-row">
+        <div class="td-info-item">📍 <strong>${t.room}</strong></div>
+        <div class="td-info-item">👤 <strong>${t.student}</strong></div>
+        <div class="td-info-item">📱 <strong>${t.device}</strong></div>
+        <div class="td-info-item">📅 <strong>${t.date}</strong></div>
+      </div>
+      ${t.detail?`<div class="td-detail-txt">${t.detail}</div>`:''}
+      <div class="admin-action-btns">
+        <button class="action-btn fixing${t.status==='progress'?' active-action':''}" onclick="setStatus('${t.id}','progress')">🔧 กำลังไปแก้</button>
+        <button class="action-btn done-btn${t.status==='done'?' active-action':''}" onclick="setStatus('${t.id}','done')">✅ เสร็จสิ้น</button>
+      </div>
+      <button class="admin-chat-btn" onclick="openChatPage('${t.id}','page-admin')">💬 แชทกับนักศึกษา ${t.msgs.length?'('+t.msgs.length+')':''}</button>
+    </div>`;
+}
+function setStatus(tid,status){
+  const t=tickets.find(x=>x.id===tid);if(!t)return;
+  t.status=status;
+  renderTicketDetail(tid);
+  renderAdminList(adminFilterVal);
+  renderAdminDashboard();
+}
+
+/* ════ KEYBOARD ════ */
+document.querySelectorAll('.bento-card[tabindex]').forEach(c=>{c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')c.click();});});
+
+/* ════ INIT ════ */
+// pre-seed demo tickets for test student
+tickets.unshift(
+  {id:'TK-2025-0080',type:'อินเตอร์เน็ตช้ามาก',room:'หอ A ห้อง 999',date:'07 เม.ย. 68',status:'progress',student:'6812345678',device:'โน้ตบุ๊ก (Windows)',detail:'โหลดช้ามาก ทำงานไม่ได้เลย',msgs:[{role:'admin',text:'รับเรื่องแล้วครับ กำลังตรวจสอบสายอยู่ 🔧',time:'10:00'}]},
+  {id:'TK-2025-0081',type:'Wi-Fi หลุดบ่อย',room:'หอ A ห้อง 999',date:'08 เม.ย. 68',status:'open',student:'6812345678',device:'สมาร์ทโฟน (iPhone)',detail:'หลุดทุก 10 นาทีครับ',msgs:[]}
+);
+</script>
+</body>
+</html>
